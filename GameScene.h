@@ -61,5 +61,10 @@ private: // メンバ変数
 	/// </summary>
 	Sprite* spriteBG = nullptr;
 	Object3d* object3d = nullptr;
+
+	//スプライト
+	Sprite* sprite1_ = nullptr;
+	Sprite* sprite2_ = nullptr;
+
 };
 
