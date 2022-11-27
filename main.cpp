@@ -1,6 +1,7 @@
 ﻿#include "WinApp.h"
 #include "DirectXCommon.h"
 #include "GameScene.h"
+#include "FPS.h"
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int)
@@ -34,10 +35,14 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int)
 	// ゲームシーンの初期化
 	gameScene = new GameScene();
 	gameScene->Initialize(dxCommon, input);
+
+	FPS* fps = new FPS;
+	fps->SetFrameRate(60);
 	
 	// メインループ
 	while (true)
 	{
+		fps->FpsControlBegin();
 		// メッセージ処理
 		if (win->ProcessMessage()) {	break; }
 
@@ -52,6 +57,8 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int)
 		gameScene->Draw();
 		// 描画終了
 		dxCommon->PostDraw();
+
+		fps->FpsControlEnd();
 	}
 	// 各種解放
 	delete gameScene;
