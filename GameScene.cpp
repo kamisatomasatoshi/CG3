@@ -1,15 +1,7 @@
 ﻿#include "GameScene.h"
 #include <cassert>
 
-#include<random>
-
 using namespace DirectX;
-
-template <class T>
-inline void safe_delete(T*& p) {
-	delete p;
-	p = nullptr;
-}
 
 GameScene::GameScene()
 {
@@ -17,17 +9,10 @@ GameScene::GameScene()
 
 GameScene::~GameScene()
 {
+	delete sprite1;
+	delete sprite2;
 	delete spriteBG;
-	delete object3d;
-
-	//for (int i = 0; i < _countof(kusa); i++)
-	//{
-	//	delete kusa[i];
-	//}
-
-	//スプライトの解放
-	safe_delete(sprite1);
-	safe_delete(sprite2);
+	delete ParticleMan;
 }
 
 void GameScene::Initialize(DirectXCommon* dxCommon, Input* input)
@@ -47,109 +32,105 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input)
 	// テクスチャ読み込み
 	Sprite::LoadTexture(1, L"Resources/background.png");
 
-	////テクスチャ2番に読み込み
-	Sprite::LoadTexture(2, L"Resources/texture.png");
-
-	//草用テクスチャをテクスチャ2番に読み込み
-	//Sprite::LoadTexture(2, L"Resources/kusa.png");
-
-
-	//座標{0,0}に、テクスチャ2番のスプライトを生成
-	//sprite1 = Sprite::Create(2, { 0,0 });
-	//座標{500,500}に、テクスチャ2番のスプライトを生成
-	//sprite2 = Sprite::Create(2, { 500,500 }, { 1,0,0,1 }, { 0,0 }, false, true);
-
 	// 背景スプライト生成
 	spriteBG = Sprite::Create(1, { 0.0f,0.0f });
 	// 3Dオブジェクト生成
-	object3d = Object3d::Create();
-	object3d->Update();
+	ParticleMan = ParticleManager::Create();
+	ParticleMan->Update();
 
-	/////乱数
-	////シード生成器
-	//std::random_device seed_gen;
-	////乱数エンジン
-	//std::mt19937_64 engine(seed_gen());
-	////範囲の指定
-	//std::uniform_real_distribution<float> dist(-20,+20);
+	//テクスチャ２番に読み込み
+	Sprite::LoadTexture(2, L"Resources/texture.png");
+	//座標{0,0}にテクスチャ2番にスプライトを生成
+	sprite1 = Sprite::Create(1, { 0,0 });
+	//座標{500,500}に、テクスチャ2番のスプライトを生成
+	sprite2 = Sprite::Create(2, { 500,500 }, { 1,0,0,1 }, { 0,0 }, false, true);
 
-	//for (int i = 0; i < _countof(kusa); i++)
-	//{
-	//	float valueX = dist(engine);
-	//	float valueZ = dist(engine);
-
-	//	kusa[i] = Object3d::Create();
-	//	kusa[i]->SetPosition(
-	//		XMFLOAT3(valueX,0,valueZ)
-	//	);
-	//	kusa[i]->Update();
-	//}
+	for (int i = 0; i < 100; i++)
+	{
+		//X,Y,Z全て[-5.0,+5.0f]でランダムに分布
+		const float rnd_pos = 10.0f;
+		XMFLOAT3 pos{};
+		pos.x = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+		pos.y = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+		pos.z = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+		//X,Y,Z全て[-5.0,+5.0f]でランダムに分布
+		const float rnd_vel = 0.1f;
+		XMFLOAT3 vel{};
+		vel.x = (float)rand() / RAND_MAX * rnd_vel - rnd_vel / 2.0f;
+		vel.y = (float)rand() / RAND_MAX * rnd_vel - rnd_vel / 2.0f;
+		vel.z = (float)rand() / RAND_MAX * rnd_vel - rnd_vel / 2.0f;
+		//重力に見立てててYのみ[-0.001f,0]でランダムに分布
+		XMFLOAT3 acc{};
+		const float rnd_acc = 0.001f;
+		acc.y = -(float)rand() / RAND_MAX * rnd_acc;
+		//追加
+		ParticleMan->Add(60, pos, vel, acc, 1.0f, 0.0f,{1,0,0,1},{2,2,2,2});
+	}
 }
 
 void GameScene::Update()
 {
-	// オブジェクト移動
-	if (input->PushKey(DIK_UP) || input->PushKey(DIK_DOWN) || input->PushKey(DIK_RIGHT) || input->PushKey(DIK_LEFT))
-	{
-		// 現在の座標を取得
-		XMFLOAT3 position = object3d->GetPosition();
-
-		// 移動後の座標を計算
-		if (input->PushKey(DIK_UP)) { position.y += 1.0f; }
-		else if (input->PushKey(DIK_DOWN)) { position.y -= 1.0f; }
-		if (input->PushKey(DIK_RIGHT)) { position.x += 1.0f; }
-		else if (input->PushKey(DIK_LEFT)) { position.x -= 1.0f; }
-
-		// 座標の変更を反映
-		object3d->SetPosition(position);
-	}
-
-	//for (int i = 0; i < _countof(kusa); i++)
+	//// オブジェクト移動
+	//if (input->PushKey(DIK_UP) || input->PushKey(DIK_DOWN) || input->PushKey(DIK_RIGHT) || input->PushKey(DIK_LEFT))
 	//{
-	//	// オブジェクト移動
-	//	if (input->PushKey(DIK_UP) || input->PushKey(DIK_DOWN) || input->PushKey(DIK_RIGHT) || input->PushKey(DIK_LEFT))
-	//	{
-	//		// 現在の座標を取得
-	//		XMFLOAT3 position = kusa[i]->GetPosition();
+	//	// 現在の座標を取得
+	//	XMFLOAT3 position = ParticleMan->GetPosition();
 
-	//		// 移動後の座標を計算
-	//		if (input->PushKey(DIK_UP)) { position.y += 1.0f; }
-	//		else if (input->PushKey(DIK_DOWN)) { position.y -= 1.0f; }
-	//		if (input->PushKey(DIK_RIGHT)) { position.x += 1.0f; }
-	//		else if (input->PushKey(DIK_LEFT)) { position.x -= 1.0f; }
+	//	// 移動後の座標を計算
+	//	if (input->PushKey(DIK_UP)) { position.y += 1.0f; }
+	//	else if (input->PushKey(DIK_DOWN)) { position.y -= 1.0f; }
+	//	if (input->PushKey(DIK_RIGHT)) { position.x += 1.0f; }
+	//	else if (input->PushKey(DIK_LEFT)) { position.x -= 1.0f; }
 
-	//		// 座標の変更を反映
-	//		kusa[i]->SetPosition(position);
-	//	}
+	//	// 座標の変更を反映
+	//	ParticleMan->SetPosition(position);
 	//}
 
 	// カメラ移動
-	if (input->PushKey(DIK_W) || input->PushKey(DIK_S) || input->PushKey(DIK_D) || input->PushKey(DIK_A))
-	{
-		if (input->PushKey(DIK_W)) { Object3d::CameraMoveEyeVector({ 0.0f,+1.0f,0.0f }); }
-		else if (input->PushKey(DIK_S)) { Object3d::CameraMoveEyeVector({ 0.0f,-1.0f,0.0f }); }
-		if (input->PushKey(DIK_D)) { Object3d::CameraMoveEyeVector({ +1.0f,0.0f,0.0f }); }
-		else if (input->PushKey(DIK_A)) { Object3d::CameraMoveEyeVector({ -1.0f,0.0f,0.0f }); }
-	}
-
-	// オブジェクト移動
 	if (input->PushKey(DIK_SPACE))
 	{
-		// 現在の座標を取得
-		XMFLOAT2 position = sprite1->GetPosition();
 
-		// 移動後の座標を計算
-		position.x += 1.0f;
 
-		// 座標の変更を反映
-		sprite1->SetPosition(position);
+		for (int i = 0; i < 100; i++)
+		{
+			//X,Y,Z全て[-5.0,+5.0f]でランダムに分布
+			const float rnd_pos = 10.0f;
+			XMFLOAT3 pos{};
+			pos.x = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+			pos.y = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+			pos.z = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+			//X,Y,Z全て[-5.0,+5.0f]でランダムに分布
+			const float rnd_vel = 0.1f;
+			XMFLOAT3 vel{};
+			vel.x = (float)rand() / RAND_MAX * rnd_vel - rnd_vel / 2.0f;
+			vel.y = (float)rand() / RAND_MAX * rnd_vel - rnd_vel / 2.0f;
+			vel.z = (float)rand() / RAND_MAX * rnd_vel - rnd_vel / 2.0f;
+			//重力に見立てててYのみ[-0.001f,0]でランダムに分布
+			XMFLOAT3 acc{};
+			const float rnd_acc = 0.001f;
+			acc.y = -(float)rand() / RAND_MAX * rnd_acc;
+			//追加
+			ParticleMan->Add(60, pos, vel, acc, 1.0f, 0.0f, { 1,0,0,1 }, { 2,2,2,2 });
+		}
+	}
+	if (input->PushKey(DIK_W) || input->PushKey(DIK_S) || input->PushKey(DIK_D) || input->PushKey(DIK_A))
+	{
+		if (input->PushKey(DIK_W)) { ParticleManager::CameraMoveEyeVector({ 0.0f,+1.0f,0.0f }); }
+		else if (input->PushKey(DIK_S)) { ParticleManager::CameraMoveEyeVector({ 0.0f,-1.0f,0.0f }); }
+		if (input->PushKey(DIK_D)) { ParticleManager::CameraMoveEyeVector({ +1.0f,0.0f,0.0f }); }
+		else if (input->PushKey(DIK_A)) { ParticleManager::CameraMoveEyeVector({ -1.0f,0.0f,0.0f }); }
 	}
 
-	object3d->Update();
-	
-	//for (int i = 0; i < _countof(kusa); i++)
-	//{
-	//	kusa[i]->Update();
+	ParticleMan->Update();
+
+	//スペースキーを押していたら
+	//if (input->PushKey(DIK_SPACE)) {
+	//	//現在の座標を取得
+	//	XMFLOAT2 position = sprite1->GetPosition();
+	//	//移動後の座標を計算
+	//	position.x += 1.0f;
+	//	//座標の変更を反映
+	//	sprite1->SetPosition(position);
 	//}
 }
 
@@ -176,22 +157,17 @@ void GameScene::Draw()
 
 #pragma region 3Dオブジェクト描画
 	// 3Dオブジェクト描画前処理
-	Object3d::PreDraw(cmdList);
+	ParticleManager::PreDraw(cmdList);
 
 	// 3Dオブクジェクトの描画
-	object3d->Draw();
-
-	//for (int i = 0; i < _countof(kusa); i++)
-	//{
-	//	kusa[i]->Draw();
-	//}
+	ParticleMan->Draw();
 
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
 
 	// 3Dオブジェクト描画後処理
-	Object3d::PostDraw();
+	ParticleManager::PostDraw();
 #pragma endregion
 
 #pragma region 前景スプライト描画
@@ -200,10 +176,9 @@ void GameScene::Draw()
 
 	/// <summary>
 	/// ここに前景スプライトの描画処理を追加できる
+	/*sprite1->Draw();
+	sprite2->Draw();*/
 	/// </summary>
-
-	//sprite1->Draw();
-	//sprite2->Draw();
 
 	// デバッグテキストの描画
 	debugText.DrawAll(cmdList);
@@ -211,6 +186,4 @@ void GameScene::Draw()
 	// スプライト描画後処理
 	Sprite::PostDraw();
 #pragma endregion
-
 }
-
